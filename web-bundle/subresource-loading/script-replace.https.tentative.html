@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<title>Subresource loading with script-based API</title>
+<link
+  rel="help"
+  href="https://github.com/WICG/webpackage/blob/main/explainers/subresource-loading.md"
+/>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<body>
+  <script id="old_script" type="webbundle">
+    {
+      "source": "../resources/wbn/subresource.wbn",
+      "resources": ["../resources/wbn/root.js", "../resources/wbn/old-wbn.js"]
+    }
+  </script>
+  <script>
+    promise_test(async () => {
+      const old_script = document.querySelector("#old_script");
+
+      assert_true((await fetch(
+        "https://web-platform.test:8444/web-bundle/resources/wbn/root.js"
+      )).ok);
+      assert_false((await fetch(
+        "https://web-platform.test:8444/web-bundle/resources/wbn/submodule.js"
+      )).ok);
+
+      const new_script = document.createElement("script");
+      new_script.type = "webbundle";
+      new_script.textContent = JSON.stringify({
+        source: "../resources/wbn/subresource.wbn",
+        resources: ["../resources/wbn/submodule.js", "../resources/wbn/new-wbn.js"],
+      });
+
+      old_script.replaceWith(new_script);
+
+      assert_false((await fetch(
+        "https://web-platform.test:8444/web-bundle/resources/wbn/root.js"
+      )).ok);
+      assert_true((await fetch(
+        "https://web-platform.test:8444/web-bundle/resources/wbn/submodule.js"
+      )).ok);
+    }, "Subresource should be loaded from webbundle");
+  </script>
+</body>
