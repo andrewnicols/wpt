@@ -37,11 +37,11 @@ promise_test(async t => {
   let wt = new WebTransport(webtransport_url(`client-close.py?token=${id}`));
   await wt.ready;
 
-  wt.close({code: 99, reason: 'reason'});
+  wt.close({closeCode: 99, reason: 'reason X'});
 
   const close_info = await wt.closed;
 
-  assert_equals(close_info.code, 99, 'code');
+  assert_equals(close_info.closeCode, 99, 'code');
   assert_equals(close_info.reason, 'reason X', 'reason');
 
   wt = new WebTransport(webtransport_url(`query.py?token=${id}`));
@@ -68,11 +68,11 @@ promise_test(async t => {
   await wt.ready;
   const reason = 'あいうえお'.repeat(1000);
 
-  wt.close({code: 11, reason});
+  wt.close({closeCode: 11, reason});
 
   const close_info = await wt.closed;
 
-  assert_equals(close_info.code, 11, 'code');
+  assert_equals(close_info.closeCode, 11, 'code');
   assert_equals(close_info.reason, reason, 'reason');
 
   wt = new WebTransport(webtransport_url(`query.py?token=${id}`));
