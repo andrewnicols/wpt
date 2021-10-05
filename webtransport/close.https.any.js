@@ -12,7 +12,7 @@ promise_test(async t => {
 
   const close_info = await wt.closed;
 
-  assert_not_own_property(close_info, 'code');
+  assert_not_own_property(close_info, 'closeCode');
   assert_not_own_property(close_info, 'reason');
 
   wt = new WebTransport(webtransport_url(`query.py?token=${id}`));
@@ -29,7 +29,8 @@ promise_test(async t => {
   const info = data['session-close-info']
 
   assert_false(info.abruptly, 'abruptly');
-  assert_equals(info.close_info, null, 'close_info');
+  assert_equals(info.close_info.code, 0, 'code');
+  assert_equals(info.close_info.reason, '', 'reason');
 }, 'close');
 
 promise_test(async t => {
@@ -37,11 +38,11 @@ promise_test(async t => {
   let wt = new WebTransport(webtransport_url(`client-close.py?token=${id}`));
   await wt.ready;
 
-  wt.close({code: 99, reason: 'reason'});
+  wt.close({closeCode: 99, reason: 'reason X'});
 
   const close_info = await wt.closed;
 
-  assert_equals(close_info.code, 99, 'code');
+  assert_equals(close_info.closeCode, 99, 'code');
   assert_equals(close_info.reason, 'reason X', 'reason');
 
   wt = new WebTransport(webtransport_url(`query.py?token=${id}`));
@@ -68,11 +69,11 @@ promise_test(async t => {
   await wt.ready;
   const reason = 'あいうえお'.repeat(1000);
 
-  wt.close({code: 11, reason});
+  wt.close({closeCode: 11, reason});
 
   const close_info = await wt.closed;
 
-  assert_equals(close_info.code, 11, 'code');
+  assert_equals(close_info.closeCode, 11, 'code');
   assert_equals(close_info.reason, reason, 'reason');
 
   wt = new WebTransport(webtransport_url(`query.py?token=${id}`));
@@ -88,11 +89,12 @@ promise_test(async t => {
   assert_own_property(data, 'session-close-info');
   const info = data['session-close-info']
 
-  const expectedReason =
-    new TextDecoder().decode(new TextEncoder().encode(reason).slice(1024))
+  const expected_reason =
+    new TextDecoder().decode(
+      new TextEncoder().encode(reason).slice(0, 1024)).replaceAll('\ufffd', '');
   assert_false(info.abruptly, 'abruptly');
   assert_equals(info.close_info.code, 11, 'code');
-  assert_equals(info.close_info.reason, expectedReason, 'reason');
+  assert_equals(info.close_info.reason, expected_reason, 'reason');
 }, 'close with code and long reason');
 
 promise_test(async t => {
